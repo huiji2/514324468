@@ -1,0 +1,914 @@
+
+<html lang="zh">
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"> 
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>混 迹 表 白 表 白 神 器</title>
+<!--	<link rel="stylesheet" type="text/css" href="css/normalize.css" />
+	<link rel="stylesheet" type="text/css" href="css/htmleaf-demo.css">
+	<link href="css/main.css" rel="stylesheet"/>-->
+    <script>// The MIT License (MIT)
+
+        // Typed.js | Copyright (c) 2016 Matt Boldt | www.mattboldt.com
+
+        // Permission is hereby granted, free of charge, to any person obtaining a copy
+        // of this software and associated documentation files (the "Software"), to deal
+        // in the Software without restriction, including without limitation the rights
+        // to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+        // copies of the Software, and to permit persons to whom the Software is
+        // furnished to do so, subject to the following conditions:
+
+        // The above copyright notice and this permission notice shall be included in
+        // all copies or substantial portions of the Software.
+
+        // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+        // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+        // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+        // AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+        // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+        // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+        // THE SOFTWARE.
+
+
+
+
+        ! function (window, document, $) {
+
+            "use strict";
+
+            var Typed = function (el, options) {
+                var self = this;
+
+                // chosen element to manipulate text
+                this.el = el;
+
+                // options
+                this.options = {};
+                Object.keys(defaults).forEach(function (key) {
+                    self.options[key] = defaults[key];
+                });
+                Object.keys(options).forEach(function (key) {
+                    self.options[key] = options[key];
+                });
+
+                // attribute to type into
+                this.isInput = this.el.tagName.toLowerCase() === 'input';
+                this.attr = this.options.attr;
+
+                // show cursor
+                this.showCursor = this.isInput ? false : this.options.showCursor;
+
+                // text content of element
+                this.elContent = this.attr ? this.el.getAttribute(this.attr) : this.el.textContent;
+
+                // html or plain text
+                this.contentType = this.options.contentType;
+
+                // typing speed
+                this.typeSpeed = this.options.typeSpeed;
+
+                // add a delay before typing starts
+                this.startDelay = this.options.startDelay;
+
+                // backspacing speed
+                this.backSpeed = this.options.backSpeed;
+
+                // amount of time to wait before backspacing
+                this.backDelay = this.options.backDelay;
+
+                // Fade out instead of backspace
+                this.fadeOut = this.options.fadeOut;
+                this.fadeOutClass = this.options.fadeOutClass;
+                this.fadeOutDelay = this.options.fadeOutDelay;
+
+                // div containing strings
+                if ($ && this.options.stringsElement instanceof $) {
+                    this.stringsElement = this.options.stringsElement[0]
+                } else {
+                    this.stringsElement = this.options.stringsElement;
+                }
+
+                // input strings of text
+                this.strings = this.options.strings;
+
+                // character number position of current string
+                this.strPos = 0;
+
+                // current array position
+                this.arrayPos = 0;
+
+                // number to stop backspacing on.
+                // default 0, can change depending on how many chars
+                // you want to remove at the time
+                this.stopNum = 0;
+
+                // Looping logic
+                this.loop = this.options.loop;
+                this.loopCount = this.options.loopCount;
+                this.curLoop = 0;
+
+                // for stopping
+                this.stop = false;
+
+                // custom cursor
+                this.cursorChar = this.options.cursorChar;
+
+                // shuffle the strings
+                this.shuffle = this.options.shuffle;
+                // the order of strings
+                this.sequence = [];
+
+                // All systems go!
+                this.build();
+            };
+
+            Typed.prototype = {
+
+                constructor: Typed,
+
+                init: function () {
+                    // begin the loop w/ first current string (global self.strings)
+                    // current string will be passed as an argument each time after this
+                    var self = this;
+                    self.timeout = setTimeout(function () {
+                        for (var i = 0; i < self.strings.length; ++i) self.sequence[i] = i;
+
+                        // shuffle the array if true
+                        if (self.shuffle) self.sequence = self.shuffleArray(self.sequence);
+
+                        // Start typing
+                        self.typewrite(self.strings[self.sequence[self.arrayPos]], self.strPos);
+                    }, self.startDelay);
+                },
+
+                build: function () {
+                    var self = this;
+                    // Insert cursor
+                    if (this.showCursor === true) {
+                        this.cursor = document.createElement('span');
+                        this.cursor.className = 'typed-cursor';
+                        this.cursor.innerHTML = this.cursorChar;
+                        this.el.parentNode && this.el.parentNode.insertBefore(this.cursor, this.el.nextSibling);
+                    }
+                    if (this.stringsElement) {
+                        this.strings = [];
+                        this.stringsElement.style.display = 'none';
+                        var strings = Array.prototype.slice.apply(this.stringsElement.children);
+                        strings.forEach(function (stringElement) {
+                            self.strings.push(stringElement.innerHTML);
+                        });
+                    }
+                    this.init();
+                },
+
+                // pass current string state to each function, types 1 char per call
+                typewrite: function (curString, curStrPos) {
+                    // exit when stopped
+                    if (this.stop === true) {
+                        return;
+                    }
+
+                    if (this.fadeOut && this.el.classList.contains(this.fadeOutClass)) {
+                        this.el.classList.remove(this.fadeOutClass);
+                        this.cursor.classList.remove(this.fadeOutClass);
+                    }
+
+                    // varying values for setTimeout during typing
+                    // can't be global since number changes each time loop is executed
+                    var humanize = Math.round(Math.random() * (100 - 30)) + this.typeSpeed;
+                    var self = this;
+
+                    // ------------- optional ------------- //
+                    // backpaces a certain string faster
+                    // ------------------------------------ //
+                    // if (self.arrayPos == 1){
+                    //  self.backDelay = 50;
+                    // }
+                    // else{ self.backDelay = 500; }
+
+                    // contain typing function in a timeout humanize'd delay
+                    self.timeout = setTimeout(function () {
+                        // check for an escape character before a pause value
+                        // format: \^\d+ .. eg: ^1000 .. should be able to print the ^ too using ^^
+                        // single ^ are removed from string
+                        var charPause = 0;
+                        var substr = curString.substr(curStrPos);
+                        if (substr.charAt(0) === '^') {
+                            var skip = 1; // skip atleast 1
+                            if (/^\^\d+/.test(substr)) {
+                                substr = /\d+/.exec(substr)[0];
+                                skip += substr.length;
+                                charPause = parseInt(substr);
+                            }
+
+                            // strip out the escape character and pause value so they're not printed
+                            curString = curString.substring(0, curStrPos) + curString.substring(curStrPos + skip);
+                        }
+
+                        if (self.contentType === 'html') {
+                            // skip over html tags while typing
+                            var curChar = curString.substr(curStrPos).charAt(0);
+                            if (curChar === '<' || curChar === '&') {
+                                var tag = '';
+                                var endTag = '';
+                                if (curChar === '<') {
+                                    endTag = '>'
+                                }
+                                else {
+                                    endTag = ';'
+                                }
+                                while (curString.substr(curStrPos + 1).charAt(0) !== endTag) {
+                                    tag += curString.substr(curStrPos).charAt(0);
+                                    curStrPos++;
+                                    if (curStrPos + 1 > curString.length) { break; }
+                                }
+                                curStrPos++;
+                                tag += endTag;
+                            }
+                        }
+
+                        // timeout for any pause after a character
+                        self.timeout = setTimeout(function () {
+                            if (curStrPos === curString.length) {
+                                // fires callback function
+                                self.options.onStringTyped(self.arrayPos);
+
+                                // is this the final string
+                                if (self.arrayPos === self.strings.length - 1) {
+                                    // animation that occurs on the last typed string
+                                    self.options.callback();
+
+                                    self.curLoop++;
+
+                                    // quit if we wont loop back
+                                    if (self.loop === false || self.curLoop === self.loopCount)
+                                        return;
+                                }
+
+                                self.timeout = setTimeout(function () {
+                                    self.backspace(curString, curStrPos);
+                                }, self.backDelay);
+
+                            } else {
+
+                                /* call before functions if applicable */
+                                if (curStrPos === 0) {
+                                    self.options.preStringTyped(self.arrayPos);
+                                }
+
+                                // start typing each new char into existing string
+                                // curString: arg, self.el.html: original text inside element
+                                var nextString = curString.substr(0, curStrPos + 1);
+                                if (self.attr) {
+                                    self.el.setAttribute(self.attr, nextString);
+                                } else {
+                                    if (self.isInput) {
+                                        self.el.value = nextString;
+                                    } else if (self.contentType === 'html') {
+                                        self.el.innerHTML = nextString;
+                                    } else {
+                                        self.el.textContent = nextString;
+                                    }
+                                }
+
+                                // add characters one by one
+                                curStrPos++;
+                                // loop the function
+                                self.typewrite(curString, curStrPos);
+                            }
+                            // end of character pause
+                        }, charPause);
+
+                        // humanized value for typing
+                    }, humanize);
+
+                },
+
+                backspace: function (curString, curStrPos) {
+                    var self = this;
+                    // exit when stopped
+                    if (this.stop === true) {
+                        return;
+                    }
+
+                    if (this.fadeOut) {
+                        this.initFadeOut();
+                        return;
+                    }
+
+                    // varying values for setTimeout during typing
+                    // can't be global since number changes each time loop is executed
+                    var humanize = Math.round(Math.random() * (100 - 30)) + this.backSpeed;
+
+                    self.timeout = setTimeout(function () {
+
+                        // ----- this part is optional ----- //
+                        // check string array position
+                        // on the first string, only delete one word
+                        // the stopNum actually represents the amount of chars to
+                        // keep in the current string. In my case it's 14.
+                        // if (self.arrayPos == 1){
+                        //  self.stopNum = 14;
+                        // }
+                        //every other time, delete the whole typed string
+                        // else{
+                        //  self.stopNum = 0;
+                        // }
+
+                        if (self.contentType === 'html') {
+                            // skip over html tags while backspacing
+                            if (curString.substr(curStrPos).charAt(0) === '>') {
+                                var tag = '';
+                                while (curString.substr(curStrPos - 1).charAt(0) !== '<') {
+                                    tag -= curString.substr(curStrPos).charAt(0);
+                                    curStrPos--;
+                                    if (curStrPos < 0) { break; }
+                                }
+                                curStrPos--;
+                                tag += '<';
+                            }
+                        }
+
+                        // ----- continue important stuff ----- //
+                        // replace text with base text + typed characters
+                        var nextString = curString.substr(0, curStrPos);
+                        self.replaceText(nextString);
+
+                        // if the number (id of character in current string) is
+                        // less than the stop number, keep going
+                        if (curStrPos > self.stopNum) {
+                            // subtract characters one by one
+                            curStrPos--;
+                            // loop the function
+                            self.backspace(curString, curStrPos);
+                        }
+                            // if the stop number has been reached, increase
+                            // array position to next string
+                        else if (curStrPos <= self.stopNum) {
+                            self.arrayPos++;
+
+                            if (self.arrayPos === self.strings.length) {
+                                self.arrayPos = 0;
+
+                                // Shuffle sequence again
+                                if (self.shuffle) self.sequence = self.shuffleArray(self.sequence);
+
+                                self.init();
+                            } else
+                                self.typewrite(self.strings[self.sequence[self.arrayPos]], curStrPos);
+                        }
+
+                        // humanized value for typing
+                    }, humanize);
+
+                },
+
+                // Adds a CSS class to fade out current string
+                initFadeOut: function () {
+                    self = this;
+                    this.el.className += ' ' + this.fadeOutClass;
+                    this.cursor.className += ' ' + this.fadeOutClass;
+                    return setTimeout(function () {
+                        self.arrayPos++;
+                        self.replaceText('')
+                        self.typewrite(self.strings[self.sequence[self.arrayPos]], 0);
+                    }, self.fadeOutDelay);
+                },
+
+                // Replaces current text in the HTML element
+                replaceText: function (str) {
+                    if (this.attr) {
+                        this.el.setAttribute(this.attr, str);
+                    } else {
+                        if (this.isInput) {
+                            this.el.value = str;
+                        } else if (this.contentType === 'html') {
+                            this.el.innerHTML = str;
+                        } else {
+                            this.el.textContent = str;
+                        }
+                    }
+                },
+
+                // Shuffles the numbers in the given array.
+                shuffleArray: function (array) {
+                    var tmp, current, top = array.length;
+                    if (top) while (--top) {
+                        current = Math.floor(Math.random() * (top + 1));
+                        tmp = array[current];
+                        array[current] = array[top];
+                        array[top] = tmp;
+                    }
+                    return array;
+                },
+
+                // Start & Stop currently not working
+
+                // , stop: function() {
+                //     var self = this;
+
+                //     self.stop = true;
+                //     clearInterval(self.timeout);
+                // }
+
+                // , start: function() {
+                //     var self = this;
+                //     if(self.stop === false)
+                //        return;
+
+                //     this.stop = false;
+                //     this.init();
+                // }
+
+                // Reset and rebuild the element
+                reset: function () {
+                    var self = this;
+                    clearInterval(self.timeout);
+                    var id = this.el.getAttribute('id');
+                    this.el.textContent = '';
+                    if (typeof this.cursor !== 'undefined' && typeof this.cursor.parentNode !== 'undefined') {
+                        this.cursor.parentNode.removeChild(this.cursor);
+                    }
+                    this.strPos = 0;
+                    this.arrayPos = 0;
+                    this.curLoop = 0;
+                    // Send the callback
+                    this.options.resetCallback();
+                }
+
+            };
+
+            Typed.new = function (selector, option) {
+                var elements = Array.prototype.slice.apply(document.querySelectorAll(selector));
+                elements.forEach(function (element) {
+                    var instance = element._typed,
+                        options = typeof option == 'object' && option;
+                    if (instance) { instance.reset(); }
+                    element._typed = instance = new Typed(element, options);
+                    if (typeof option == 'string') instance[option]();
+                });
+            };
+
+            if ($) {
+                $.fn.typed = function (option) {
+                    return this.each(function () {
+                        var $this = $(this),
+                            data = $this.data('typed'),
+                            options = typeof option == 'object' && option;
+                        if (data) { data.reset(); }
+                        $this.data('typed', (data = new Typed(this, options)));
+                        if (typeof option == 'string') data[option]();
+                    });
+                };
+            }
+
+            window.Typed = Typed;
+
+            var defaults = {
+                strings: ["These are the default values...", "You know what you should do?", "Use your own!", "Have a great day!"],
+                stringsElement: null,
+                // typing speed
+                typeSpeed: 0,
+                // time before typing starts
+                startDelay: 0,
+                // backspacing speed
+                backSpeed: 0,
+                // shuffle the strings
+                shuffle: false,
+                // time before backspacing
+                backDelay: 500,
+                // Fade out instead of backspace
+                fadeOut: false,
+                fadeOutClass: 'typed-fade-out',
+                fadeOutDelay: 500, // milliseconds
+                // loop
+                loop: false,
+                // false = infinite
+                loopCount: false,
+                // show cursor
+                showCursor: true,
+                // character for cursor
+                cursorChar: "|",
+                // attribute to type (null == text)
+                attr: null,
+                // either html or text
+                contentType: 'html',
+                // call when done callback function
+                callback: function () { },
+                // starting callback function before each string
+                preStringTyped: function () { },
+                //callback for every typed string
+                onStringTyped: function () { },
+                // callback for reset
+                resetCallback: function () { }
+            };
+
+
+        }(window, document, window.jQuery);
+</script>
+    <style>
+        @font-face {
+	font-family: 'icomoon';
+	src:url('../fonts/icomoon.eot?rretjt');
+	src:url('../fonts/icomoon.eot?#iefixrretjt') format('embedded-opentype'),
+		url('../fonts/icomoon.woff?rretjt') format('woff'),
+		url('../fonts/icomoon.ttf?rretjt') format('truetype'),
+		url('../fonts/icomoon.svg?rretjt#icomoon') format('svg');
+	font-weight: normal;
+	font-style: normal;
+}
+
+[class^="icon-"], [class*=" icon-"] {
+	font-family: 'icomoon';
+	speak: none;
+	font-style: normal;
+	font-weight: normal;
+	font-variant: normal;
+	text-transform: none;
+	line-height: 1;
+
+	/* Better Font Rendering =========== */
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
+
+body, html { font-size: 100%; 	padding: 0; margin: 0;}
+
+/* Reset */
+*,
+*:after,
+*:before {
+	-webkit-box-sizing: border-box;
+	-moz-box-sizing: border-box;
+	box-sizing: border-box;
+}
+
+/* Clearfix hack by Nicolas Gallagher: http://nicolasgallagher.com/micro-clearfix-hack/ */
+.clearfix:before,
+.clearfix:after {
+	content: " ";
+	display: table;
+}
+
+.clearfix:after {
+	clear: both;
+}
+
+body{
+	background: #494A5F;
+	font-weight: 500;
+	font-size: 1.05em;
+	font-family: "Microsoft YaHei","Segoe UI", "Lucida Grande", Helvetica, Arial,sans-serif;
+}
+a{ color: rgba(255, 255, 255, 0.6);outline: none;text-decoration: none;-webkit-transition: 0.2s;transition: 0.2s;}
+a:hover,a:focus{color:#74777b;text-decoration: none;}
+.htmleaf-container{
+	margin: 0 auto;
+}
+
+.bgcolor-1 { background: #f0efee; }
+.bgcolor-2 { background: #f9f9f9; }
+.bgcolor-3 { background: #e8e8e8; }/*light grey*/
+.bgcolor-4 { background: #2f3238; color: #fff; }/*Dark grey*/
+.bgcolor-5 { background: #df6659; color: #521e18; }/*pink1*/
+.bgcolor-6 { background: #2fa8ec; }/*sky blue*/
+.bgcolor-7 { background: #d0d6d6; }/*White tea*/
+.bgcolor-8 { background: #3d4444; color: #fff; }/*Dark grey2*/
+.bgcolor-9 { background: #ef3f52; color: #fff;}/*pink2*/
+.bgcolor-10{ background: #64448f; color: #fff;}/*Violet*/
+.bgcolor-11{ background: #3755ad; color: #fff;}/*dark blue*/
+.bgcolor-12{ background: #3498DB; color: #fff;}/*light blue*/
+.bgcolor-20{ background: #494A5F;color: #D5D6E2;}
+/* Header */
+.htmleaf-header{
+	padding: 1em 190px 1em;
+	letter-spacing: -1px;
+	text-align: center;
+	background: #66677c;
+}
+.htmleaf-header h1 {
+	color: #D5D6E2;
+	font-weight: 600;
+	font-size: 2em;
+	line-height: 1;
+	margin-bottom: 0;
+	font-family: "Microsoft YaHei","Segoe UI", "Lucida Grande", Helvetica, Arial,sans-serif;
+}
+.htmleaf-header h1 span {
+	display: block;
+	font-size: 60%;
+	font-weight: 400;
+	padding: 0.8em 0 0.5em 0;
+	color: #c3c8cd;
+}
+/*nav*/
+.htmleaf-demo a{color: #fff;text-decoration: none;}
+.htmleaf-demo{width: 100%;padding-bottom: 1.2em;}
+.htmleaf-demo a{display: inline-block;margin: 0.5em;padding: 0.6em 1em;border: 3px solid #fff;font-weight: 700;}
+.htmleaf-demo a:hover{opacity: 0.6;}
+.htmleaf-demo a.current{background:#1d7db1;color: #fff; }
+/* Top Navigation Style */
+.htmleaf-links {
+	position: relative;
+	display: inline-block;
+	white-space: nowrap;
+	font-size: 1.5em;
+	text-align: center;
+}
+
+.htmleaf-links::after {
+	position: absolute;
+	top: 0;
+	left: 50%;
+	margin-left: -1px;
+	width: 2px;
+	height: 100%;
+	background: #dbdbdb;
+	content: '';
+	-webkit-transform: rotate3d(0,0,1,22.5deg);
+	transform: rotate3d(0,0,1,22.5deg);
+}
+
+.htmleaf-icon {
+	display: inline-block;
+	margin: 0.5em;
+	padding: 0em 0;
+	width: 1.5em;
+	text-decoration: none;
+}
+
+.htmleaf-icon span {
+	display: none;
+}
+
+.htmleaf-icon:before {
+	margin: 0 5px;
+	text-transform: none;
+	font-weight: normal;
+	font-style: normal;
+	font-variant: normal;
+	font-family: 'icomoon';
+	line-height: 1;
+	speak: none;
+	-webkit-font-smoothing: antialiased;
+}
+/* footer */
+.htmleaf-footer{width: 100%;padding-top: 10px;}
+.htmleaf-small{font-size: 0.8em;}
+.center{text-align: center;}
+/****/
+.related {
+	color: #fff;
+	background: #494A5F;
+	text-align: center;
+	font-size: 1.25em;
+	padding: 0.5em 0;
+	overflow: hidden;
+}
+
+.related > a {
+	vertical-align: top;
+	width: calc(100% - 20px);
+	max-width: 340px;
+	display: inline-block;
+	text-align: center;
+	margin: 20px 10px;
+	padding: 25px;
+	font-family: "Microsoft YaHei","宋体","Segoe UI", "Lucida Grande", Helvetica, Arial,sans-serif, FreeSans, Arimo;
+}
+.related a {
+	display: inline-block;
+	text-align: left;
+	margin: 20px auto;
+	padding: 10px 20px;
+	opacity: 0.8;
+	-webkit-transition: opacity 0.3s;
+	transition: opacity 0.3s;
+	-webkit-backface-visibility: hidden;
+}
+
+.related a:hover,
+.related a:active {
+	opacity: 1;
+}
+
+.related a img {
+	max-width: 100%;
+	opacity: 0.8;
+	border-radius: 4px;
+}
+.related a:hover img,
+.related a:active img {
+	opacity: 1;
+}
+.related h3{font-family: "Microsoft YaHei", sans-serif;font-size: 1.2em}
+.related a h3 {
+	font-size: 0.85em;
+	font-weight: 300;
+	margin-top: 0.15em;
+	color: #fff;
+}
+/* icomoon */
+.icon-htmleaf-home-outline:before {
+	content: "\e5000";
+}
+
+.icon-htmleaf-arrow-forward-outline:before {
+	content: "\e5001";
+}
+
+@media screen and (max-width: 1024px) {
+	.htmleaf-header {
+		padding: 2em 10% 2em;
+	}
+	.htmleaf-header h1 {
+        font-size:1.4em;
+    }
+    .htmleaf-links{font-size: 1.4em}
+}
+
+@media screen and (max-width: 960px) {
+	.htmleaf-header {
+		padding: 2em 10% 2em;
+	}
+	.htmleaf-header h1 {
+        font-size:1.2em;
+    }
+    .htmleaf-links{font-size: 1.2em}
+    .related h3{font-size: 1em;}
+	.related a h3 {
+		font-size: 0.8em;
+	}
+}
+
+@media screen and (max-width: 766px) {
+	.htmleaf-header h1 {
+        font-size:1.3em;
+    }
+    .htmleaf-links{font-size: 1.3em}
+}
+
+@media screen and (max-width: 640px) {
+	.htmleaf-header {
+		padding: 2em 10% 2em;
+	}
+	.htmleaf-header h1 {
+        font-size:1em;
+    }
+    .htmleaf-links{font-size: 1em}
+    .related h3{font-size: 0.8em;}
+	.related a h3 {
+		font-size: 0.6em;
+	}
+}
+
+
+@import url(http://fonts.googleapis.com/css?family=Ubuntu:400,500);
+
+*{
+	padding:0;
+	margin:0;
+}
+
+body{
+	font-family: "Ubuntu", sans-serif;
+	font-size: 100%;
+	background:#f8f8f8;
+}
+
+p{
+	line-height: 2em;
+	margin:0 0 20px;
+	text-align: center;
+}
+
+.wrap{
+	max-width: 600px;
+	margin:150px auto;
+}
+
+.type-wrap{
+	margin:10px auto;
+	padding:20px;
+	background:#f0f0f0;
+	border-radius:5px;
+	border:#CCC 1px solid;
+}
+
+.links{
+	margin:20px 0;
+	font-size: 0.75em;
+	text-align: center;
+}
+
+article,aside,details,figcaption,figure,footer,header,hgroup,main,nav,section,summary{display:block;}audio,canvas,video{display:inline-block;}audio:not([controls]){display:none;height:0;}[hidden]{display:none;}html{font-family:sans-serif;-ms-text-size-adjust:100%;-webkit-text-size-adjust:100%;}body{margin:0;}a:focus{outline:thin dotted;}a:active,a:hover{outline:0;}h1{font-size:2em;margin:0.67em 0;}abbr[title]{border-bottom:1px dotted;}b,strong{font-weight:bold;}dfn{font-style:italic;}hr{-moz-box-sizing:content-box;box-sizing:content-box;height:0;}mark{background:#ff0;color:#000;}code,kbd,pre,samp{font-family:monospace,serif;font-size:1em;}pre{white-space:pre-wrap;}q{quotes:"\201C" "\201D" "\2018" "\2019";}small{font-size:80%;}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline;}sup{top:-0.5em;}sub{bottom:-0.25em;}img{border:0;}svg:not(:root){overflow:hidden;}figure{margin:0;}fieldset{border:1px solid #c0c0c0;margin:0 2px;padding:0.35em 0.625em 0.75em;}legend{border:0;padding:0;}button,input,select,textarea{font-family:inherit;font-size:100%;margin:0;}button,input{line-height:normal;}button,select{text-transform:none;}button,html input[type="button"],input[type="reset"],input[type="submit"]{-webkit-appearance:button;cursor:pointer;}button[disabled],html input[disabled]{cursor:default;}input[type="checkbox"],input[type="radio"]{box-sizing:border-box;padding:0;}input[type="search"]{-webkit-appearance:textfield;-moz-box-sizing:content-box;-webkit-box-sizing:content-box;box-sizing:content-box;}input[type="search"]::-webkit-search-cancel-button,input[type="search"]::-webkit-search-decoration{-webkit-appearance:none;}button::-moz-focus-inner,input::-moz-focus-inner{border:0;padding:0;}textarea{overflow:auto;vertical-align:top;}table{border-collapse:collapse;border-spacing:0;}
+    </style>
+	<style type="text/css">
+		 /* code for animated blinking cursor */
+	        .typed-cursor{
+	            opacity: 1;
+	            font-weight: 100;
+	            -webkit-animation: blink 0.7s infinite;
+	            -moz-animation: blink 0.7s infinite;
+	            -ms-animation: blink 0.7s infinite;
+	            -o-animation: blink 0.7s infinite;
+	            animation: blink 0.7s infinite;
+	        }
+	        @-keyframes blink{
+	            0% { opacity:1; }
+	            50% { opacity:0; }
+	            100% { opacity:1; }
+	        }
+	        @-webkit-keyframes blink{
+	            0% { opacity:1; }
+	            50% { opacity:0; }
+	            100% { opacity:1; }
+	        }
+	        @-moz-keyframes blink{
+	            0% { opacity:1; }
+	            50% { opacity:0; }
+	            100% { opacity:1; }
+	        }
+	        @-ms-keyframes blink{
+	            0% { opacity:1; }
+	            50% { opacity:0; }
+	            100% { opacity:1; }
+	        }
+	        @-o-keyframes blink{
+	            0% { opacity:1; }
+	            50% { opacity:0; }
+	            100% { opacity:1; }
+	        }
+
+	        .typed-fade-out{
+	            opacity: 0;
+	            animation: 0;
+	            transition: opacity .25s;
+	        }
+	</style>
+</head>
+<body>
+	<div class="htmleaf-container">
+		<header class="htmleaf-header">
+			<h1> 一段打完又删掉的话 <span>终于有勇气给你看</span></h1>
+			
+		</header>
+		<div class="wrap">
+	        <h1 class="h1">赵 珂 呀 </h1>
+
+	        <div class="type-wrap">
+	            <div id="typed-strings">
+	                <p></p>
+	                 <p>咳咳...</p>
+	                <span>看来你还不傻啊</span>
+	                <p>既然你已经猜出来了</p>
+	                <p>那我就...</p>
+	                <p>那我就勉为其难的答应你吧！</p>
+	                <p>其实...</p>
+	                <p>其实我也是喜欢你的</p>
+	                 <p>全世界都知道我也是喜欢你的</p>
+	                <p>偏偏只有你个傻子不知道！！！</p>
+	                <p>不过还好你主动了</p>
+	                <p>也不算晚</p>
+	                <p>我们在一起吧！</p>
+					 <p><a href="http://qm.qq.com/cgi-bin/qm/qr?k=Uf1D7__a7Hyxge3t_BZi-scxvG_CEpit" style="color:#ff6a00"> 查看详情</a></p>
+
+	            </div>
+	            <span id="typed" style="white-space:pre;"></span>
+	        </div>
+	    </div>
+		
+	</div>
+	
+	<script src="js/typed.js" type="text/javascript"></script>
+	<script type="text/javascript">
+		document.addEventListener('DOMContentLoaded', function(){
+
+	        Typed.new("#typed", {
+	            stringsElement: document.getElementById('typed-strings'),
+	            typeSpeed: 100,
+	            backDelay: 1000,
+	            loop: false,
+	            contentType: 'html', // or text
+	            // defaults to null for infinite loop
+	            loopCount: null,
+	            callback: function(){ foo(); },
+	            resetCallback: function() { newTyped(); }
+	        });
+
+	        var resetElement = document.querySelector('.reset');
+	        if(resetElement) {
+	            resetElement.addEventListener('click', function() {
+	                document.getElementById('typed')._typed.reset();
+	            });
+	        }
+
+	    });
+
+	    function newTyped(){ /* A new typed object */ }
+
+	    function foo(){ console.log("Callback"); }
+	</script>
+</body>
+</html>
